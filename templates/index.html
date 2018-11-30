@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Invoice Gen</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css?family=Titillium+Web:200,300,400,600,700" rel="stylesheet">
+  <style type="text/css">
+    body {
+      font-family: "Titillium Web", "Source Sans Pro", Apple SD Gothic Neo, Nanum Barun Gothic, Nanum Gothic, Verdana, Arial, Dotum, sans-serif;
+      font-size: 1.2em;
+      color: #343a40;
+      background-color: #fff;
+      -webkit-font-smoothing: antialiased;
+      padding-top: 50px;
+    }
+
+    p {
+      font-weight: 300;
+    }
+
+    .title {
+      font-weight: 600;
+      font-size: 1.7em;
+    }
+
+    td, .thin {
+      font-weight: 300;
+    }
+
+    .seperator {
+      border-bottom: 1px solid black;
+      width: 500px;
+    }
+
+    .invoice-type {
+      background-color: black;
+      color: white;
+      text-align: left;
+    }
+
+    .invert-color {
+      background-color: black;
+      color: white;
+    }
+
+    .col-half {
+      width: 50%;
+      display: inline-block;
+      float: left;
+      height: 175px;
+      margin-top: 15px;
+    }
+
+    .bb-none {
+      border-bottom: none !important;
+    }
+
+    .bt-none {
+      border-top: none !important;
+    }
+
+    .bl-none {
+      border-left: none !important;
+    }
+
+    .text-small {
+      font-size: 0.75em;
+    }
+
+    .currency {
+      float: left;
+    }
+
+    table {
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="row justify-content-center text-center mt-5">
+    <div class="col-md-12 mb-4">
+      <div class="title">[BUSINESS_NAME]</div>
+      <div class="thin">[BUSINESS_ADDRESS]</div>
+      <div class="thin">[BUSINESS_CITY_PROVINCE_COUNTRY]</div>
+      <div class="thin">[BUSINESS_POSTAL_CODE]</div>
+      <div class="thin text-small">[BUSINESS_PHONE]</div>
+    </div>
+  </div>
+  <div class="row justify-content-center">
+    <div class="col-sm-10 mb-4">
+      <div class="text-justify text-uppercase thin pl-2 invoice-type mb-2">[INVOICE_TYPE]</div>
+      <div class="col-half">
+        <h4>BILL TO:</h4>
+        <div class="thin">[CUSTOMER_NAME]</div>
+        <div class="thin">[CUSTOMER_ADDRESS]</div>
+        <div class="thin">[CUSTOMER_CITY_PROVINCE_COUNTRY]</div>
+        <div class="thin">[CUSTOMER_POSTAL_CODE]</div>
+      </div>
+      <div class="col-half">
+        <div><span class="thin">DATE:</span> [INVOICE_DATE]</div>
+        <div><span class="thin text-uppercase">[INVOICE_TYPE] #:</span> [INVOICE_NUMBER]</div>
+        <div><span class="thin">CUSTOMER ID:</span> [CUSTOMER_ID]</div>
+      </div>
+    </div>
+    <div class="col-sm-10">
+      <table class="table table-bordered">
+        <tr>
+          <th>Description</th>
+          <th>Hours</th>
+          <th>Pay Rate</th>
+          <th>Amount (CAD)</th>
+        </tr>
+        [INVOICE_ITEMS]
+        <tr>
+          <td colspan="3" class="bb-none bt-none bl-none text-right">Subtotal</td>
+          <td class="bb-none bt-none text-right"><span class="currency">$</span>[INVOICE_SUBTOTAL]</td>
+        </tr>
+        <tr>
+          <td colspan="3" class="bb-none bt-none bl-none text-right">Tax</td>
+          <td class="bb-none bt-none text-right"><span class="currency">$</span>-</td>
+        </tr>
+        <tr>
+          <td colspan="3" class="bb-none bt-none bl-none text-right">Expenses</td>
+          <td class="bb-none bt-none text-right"><span class="currency">$</span>-</td>
+        </tr>
+        <tr>
+          <td colspan="3" class="bb-none bt-none bl-none text-right">Total</td>
+          <td class="text-right invert-color"><span class="currency">$</span>[INVOICE_TOTAL]</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
