@@ -1,2 +1,5 @@
 .DS_Store
 *.pdf
+data/
+config.json
+sandbox.py
