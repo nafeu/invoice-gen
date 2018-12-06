@@ -58,8 +58,8 @@ parser.add_argument("-b", "--build",
                     help="build a new pdf using the specified json file",
                     metavar='JSON_FILE',
                     nargs=1)
-
 args = parser.parse_args()
+
 
 def main():
     config = {}
@@ -84,9 +84,11 @@ def main():
     elif len([(customer['id'] == args.customer_id) for customer in config['customers']]) > 0:
         init_new_invoice_data(config, get_customer_by_id(config['customers'], args.customer_id))
 
+
 def list_customers(config):
     for customer in config['customers']:
         print("%s - %s" % (customer['id'], customer['name']))
+
 
 def build_pdf(config, data):
     with open("templates/index.html", "r") as file:
@@ -110,8 +112,10 @@ def build_pdf(config, data):
         subprocess.check_call(["open", "-a", "Preview.app", "export.pdf"])
         print("Complete.")
 
+
 def open_file(path):
     subprocess.check_call(["open", path])
+
 
 def init_new_invoice_data(config, customer):
     data = DEFAULT_DATA
@@ -126,15 +130,18 @@ def init_new_invoice_data(config, customer):
     create_json_file(file_name, data)
     open_file(file_name)
 
+
 def create_json_file(path, data):
     with open(path, 'w') as file:
         json.dump(data, file, indent=2)
+
 
 def get_customer_by_id(customers, customer_id):
     for customer in customers:
         if customer['id'] == int(customer_id):
             return customer
     return None
+
 
 def get_invoice_number(abbreviation, now):
     return "%s%s%s" % (abbreviation,
@@ -146,6 +153,7 @@ def get_invoice_number(abbreviation, now):
 def get_invoice_date(now):
     return now.strftime("%b %m, %Y")
 
+
 def get_invoice_items(data):
     out = ""
     for item in data['items']:
@@ -154,6 +162,7 @@ def get_invoice_items(data):
         out += "<td class='text-right'><span class='currency'>$</span>%s</td>" % item['rate']
         out += "<td class='text-right'><span class='currency'>$</span>%s</td></tr>" % item['total']
     return out
+
 
 if __name__ == '__main__':
     main()
