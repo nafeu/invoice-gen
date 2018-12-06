@@ -78,7 +78,7 @@ def main():
         if (os.path.isfile(args.build[0])):
             with open(args.build[0]) as raw_data:
                 data = json.load(raw_data)
-                build_pdf(config, data)
+                build_pdf(config, data, args.build[0].replace(".json", ".pdf"))
         else:
             print("Invoice data file '%s' does not exist." % args.build[0])
     elif len([(customer['id'] == args.customer_id) for customer in config['customers']]) > 0:
@@ -90,7 +90,7 @@ def list_customers(config):
         print("%s - %s" % (customer['id'], customer['name']))
 
 
-def build_pdf(config, data):
+def build_pdf(config, data, export_path):
     with open("templates/index.html", "r") as file:
         print("Generating...")
         customer = get_customer_by_id(config['customers'], data['customer_id'])
@@ -101,15 +101,18 @@ def build_pdf(config, data):
                            .replace("[BUSINESS_POSTAL_CODE]", config['postal_code']) \
                            .replace("[BUSINESS_PHONE]", config['phone']) \
                            .replace("[CUSTOMER_NAME]", customer['name']) \
+                           .replace("[CUSTOMER_ID]", str(customer['id'])) \
                            .replace("[CUSTOMER_ADDRESS]", customer['address']) \
                            .replace("[CUSTOMER_CITY_PROVINCE_COUNTRY]", customer['city_province_country']) \
                            .replace("[CUSTOMER_POSTAL_CODE]", customer['postal_code']) \
                            .replace("[INVOICE_DATE]", data['invoice_date']) \
                            .replace("[INVOICE_NUMBER]", data['invoice_number']) \
                            .replace("[INVOICE_TYPE]", data['invoice_type'], 2) \
-                           .replace("[INVOICE_ITEMS]", get_invoice_items(data))
-        pdfkit.from_string(template, 'export.pdf')
-        subprocess.check_call(["open", "-a", "Preview.app", "export.pdf"])
+                           .replace("[INVOICE_ITEMS]", get_invoice_items(process_invoice_data(data))) \
+                           .replace("[INVOICE_SUBTOTAL]", str(get_invoice_subtotal(data))) \
+                           .replace("[INVOICE_TOTAL]", str(get_invoice_total(data)))
+        pdfkit.from_string(template, export_path)
+        subprocess.check_call(["open", "-a", "Preview.app", export_path])
         print("Complete.")
 
 
@@ -122,7 +125,6 @@ def init_new_invoice_data(config, customer):
     data['customer_id'] = customer['id']
     data['invoice_date'] = get_invoice_date(now)
     data['invoice_number'] = get_invoice_number(config['abrv'], now)
-
     file_name = "%s_-_%s_%s_-_%s.json" % (config['name'].replace(" ", "_"),
                                           customer['name'].replace(" ", "_"),
                                           data['invoice_type'].capitalize(),
@@ -162,6 +164,20 @@ def get_invoice_items(data):
         out += "<td class='text-right'><span class='currency'>$</span>%s</td>" % item['rate']
         out += "<td class='text-right'><span class='currency'>$</span>%s</td></tr>" % item['total']
     return out
+
+
+def get_invoice_total(data):
+    # TODO: Make more comprehensive
+    return sum([(item['hours'] * item['rate']) for item in data['items']])
+
+def get_invoice_subtotal(data):
+    return sum([(item['hours'] * item['rate']) for item in data['items']])
+
+
+def process_invoice_data(data):
+    for item in data['items']:
+        item['total'] = item['hours'] * item['rate']
+    return data
 
 
 if __name__ == '__main__':
