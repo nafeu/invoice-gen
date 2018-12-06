@@ -5,6 +5,8 @@ import subprocess
 import argparse
 import os.path
 import datetime
+import string
+import random
 
 now = datetime.datetime.now()
 
@@ -42,6 +44,7 @@ DEFAULT_DATA = {
         }
     ]
 }
+INVOICE_NUMBER_UID_LENGTH = 5
 
 parser = argparse.ArgumentParser(description='Generate invoices.')
 parser.add_argument('customer_id',
@@ -119,7 +122,7 @@ def init_new_invoice_data(config, customer):
     file_name = "%s_-_%s_%s_-_%s.json" % (config['name'].replace(" ", "_"),
                                           customer['name'].replace(" ", "_"),
                                           data['invoice_type'].capitalize(),
-                                          get_invoice_number(config['abrv'], now))
+                                          data['invoice_number'])
     create_json_file(file_name, data)
     open_file(file_name)
 
@@ -134,7 +137,11 @@ def get_customer_by_id(customers, customer_id):
     return None
 
 def get_invoice_number(abbreviation, now):
-    return abbreviation + str(now.strftime("%d%m%Y"))
+    return "%s%s%s" % (abbreviation,
+                       str(now.strftime("%d%m%Y")),
+                       ''.join(random.choices(string.ascii_uppercase + string.digits,
+                                              k=INVOICE_NUMBER_UID_LENGTH)))
+
 
 def get_invoice_date(now):
     return now.strftime("%b %m, %Y")
