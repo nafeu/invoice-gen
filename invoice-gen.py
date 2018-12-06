@@ -93,6 +93,7 @@ def list_customers(config):
 def build_pdf(config, data, export_path):
     with open("templates/index.html", "r") as file:
         print("Generating...")
+        processed_data = process_invoice_data(data)
         customer = get_customer_by_id(config['customers'], data['customer_id'])
         template = file.read()
         template = template.replace("[BUSINESS_NAME]", config['name']) \
@@ -108,9 +109,9 @@ def build_pdf(config, data, export_path):
                            .replace("[INVOICE_DATE]", data['invoice_date']) \
                            .replace("[INVOICE_NUMBER]", data['invoice_number']) \
                            .replace("[INVOICE_TYPE]", data['invoice_type'], 2) \
-                           .replace("[INVOICE_ITEMS]", get_invoice_items(process_invoice_data(data))) \
-                           .replace("[INVOICE_SUBTOTAL]", str(get_invoice_subtotal(data))) \
-                           .replace("[INVOICE_TOTAL]", str(get_invoice_total(data)))
+                           .replace("[INVOICE_ITEMS]", get_invoice_items(processed_data)) \
+                           .replace("[INVOICE_SUBTOTAL]", str(get_invoice_subtotal(processed_data))) \
+                           .replace("[INVOICE_TOTAL]", str(get_invoice_total(processed_data)))
         pdfkit.from_string(template, export_path)
         subprocess.check_call(["open", "-a", "Preview.app", export_path])
         print("Complete.")
@@ -161,22 +162,30 @@ def get_invoice_items(data):
     for item in data['items']:
         out += "<tr><td>%s</td>" % item['desc']
         out += "<td class='text-right'>%s</td>" % item['hours']
-        out += "<td class='text-right'><span class='currency'>$</span>%s</td>" % item['rate']
+        rate_label = "/hr"
+        if "type" in item:
+            rate_label = " (%s)" % item['type']
+        out += "<td class='text-right'><span class='currency'>$</span>%s%s</td>" % (item['rate'], rate_label)
         out += "<td class='text-right'><span class='currency'>$</span>%s</td></tr>" % item['total']
     return out
 
 
 def get_invoice_total(data):
     # TODO: Make more comprehensive
-    return sum([(item['hours'] * item['rate']) for item in data['items']])
+    return sum([item['total'] for item in data['items']])
+
 
 def get_invoice_subtotal(data):
-    return sum([(item['hours'] * item['rate']) for item in data['items']])
+    return sum([item['total'] for item in data['items']])
 
 
 def process_invoice_data(data):
     for item in data['items']:
-        item['total'] = item['hours'] * item['rate']
+        # TODO: Add more rate type options
+        if "type" in item:
+            item['total'] = item['rate']
+        else:
+            item['total'] = item['hours'] * item['rate']
     return data
 
 
