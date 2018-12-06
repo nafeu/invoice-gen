@@ -31,8 +31,8 @@ DEFAULT_CONFIG = {
 DEFAULT_DATA = {
     "customer_id": 0,
     "invoice_type": "invoice",
-    "invoice_date": now.strftime("%b %m, %Y"),
-    "invoice_number": DEFAULT_CONFIG['abrv'] + str(now.strftime("%d%m%Y")),
+    "invoice_date": "",
+    "invoice_number": "",
     "items": [
         {
             "desc": "[DESCRIPTION]",
@@ -79,8 +79,7 @@ def main():
         else:
             print("Invoice data file '%s' does not exist." % args.build[0])
     elif len([(customer['id'] == args.customer_id) for customer in config['customers']]) > 0:
-        create_json_file(args.customer_id + "_invoice.json", DEFAULT_DATA)
-        open_file(args.customer_id + "_invoice.json")
+        init_new_invoice_data(config, get_customer_by_id(config['customers'], args.customer_id))
 
 def list_customers(config):
     for customer in config['customers']:
@@ -111,15 +110,34 @@ def build_pdf(config, data):
 def open_file(path):
     subprocess.check_call(["open", path])
 
+def init_new_invoice_data(config, customer):
+    data = DEFAULT_DATA
+    data['customer_id'] = customer['id']
+    data['invoice_date'] = get_invoice_date(now)
+    data['invoice_number'] = get_invoice_number(config['abrv'], now)
+
+    file_name = "%s_-_%s_%s_-_%s.json" % (config['name'].replace(" ", "_"),
+                                          customer['name'].replace(" ", "_"),
+                                          data['invoice_type'].capitalize(),
+                                          get_invoice_number(config['abrv'], now))
+    create_json_file(file_name, data)
+    open_file(file_name)
+
 def create_json_file(path, data):
     with open(path, 'w') as file:
         json.dump(data, file, indent=2)
 
 def get_customer_by_id(customers, customer_id):
     for customer in customers:
-        if customer['id'] == customer_id:
+        if customer['id'] == int(customer_id):
             return customer
     return None
+
+def get_invoice_number(abbreviation, now):
+    return abbreviation + str(now.strftime("%d%m%Y"))
+
+def get_invoice_date(now):
+    return now.strftime("%b %m, %Y")
 
 def get_invoice_items(data):
     out = ""
