@@ -2,5 +2,6 @@
 *.pdf
 *.yaml
 *.json
+*.html
 data/
 sandbox.py
