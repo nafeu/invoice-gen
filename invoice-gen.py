@@ -332,7 +332,7 @@ def get_invoice_date(now):
 def get_invoice_items(data):
     out = ""
     for item in data['items']:
-        out += "<tr><td class='item-cell'>%s</td>" % item['desc']
+        out += "<tr><td class='item-cell'>%s</td>" % process_item_desc(item['desc'])
         out += "<td class='text-center item-cell'>%s</td>" % item['hours']
         rate_label = "/hr"
         if "type" in item:
@@ -340,6 +340,18 @@ def get_invoice_items(data):
         out += "<td class='text-right item-cell'><span class='currency'>$</span>%s%s</td>" % (item['rate'], rate_label)
         out += "<td class='text-right item-cell'><span class='currency'>$</span>%s</td></tr>" % item['total']
     return out
+
+
+def process_item_desc(desc):
+    if isinstance(desc, list):
+        out = ""
+        for item in desc:
+            if item[0].isupper():
+                out += "%s</br>" % item
+            else:
+                out += "- %s</br>" % item
+        return out
+    return desc
 
 
 def get_invoice_total(data):
