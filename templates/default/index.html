@@ -63,6 +63,10 @@
       border-left: none !important;
     }
 
+    .br-none {
+      border-right: none !important;
+    }
+
     .text-small {
       font-size: 0.75em;
     }
@@ -73,6 +77,21 @@
 
     table {
       font-size: 0.9em;
+    }
+
+    .sep {
+      margin: 15px 0px 30px 0px;
+      width: 100%;
+      height: 2px;
+      background-color: #DEE2E6;
+    }
+
+    .bold {
+      font-weight: 700;
+    }
+
+    .item-cell {
+      border: none !important;
     }
   </style>
 </head>
@@ -112,8 +131,8 @@
         </tr>
         [INVOICE_ITEMS]
         <tr>
-          <td colspan="3" class="bb-none bt-none bl-none text-right">Subtotal</td>
-          <td class="bb-none bt-none text-right"><span class="currency">$</span>[INVOICE_SUBTOTAL]</td>
+          <td colspan="3" class="bb-none bl-none text-right">Subtotal</td>
+          <td class="bb-none text-right"><span class="currency">$</span>[INVOICE_SUBTOTAL]</td>
         </tr>
         <tr>
           <td colspan="3" class="bb-none bt-none bl-none text-right">Tax</td>
@@ -128,6 +147,23 @@
           <td class="text-right invert-color"><span class="currency">$</span>[INVOICE_TOTAL]</td>
         </tr>
       </table>
+    </div>
+    <div class="col-sm-10 mt-2">
+      <p class="text-center text-small">
+        Please process all payments within <span class="bold">15 days</span> of receiving this invoice.
+      </p>
+      <ul>
+        <li class="thin">Make all cheques payable to <span class="bold">Nafeu Nasir</span></li>
+        <li class="thin">eTransfers and Paypal payments are also accepted, please send to  <span class="bold">nafeu.nasir@gmail.com</span></li>
+      </ul>
+    </div>
+    <div class="col-sm-4">
+      <div class="sep"></div>
+    </div>
+    <div class="col-sm-10">
+      <p class="text-center text-small">
+        If you have any questions about this invoice, please call +1(416)894-5354 or email <em>nafeu.nasir@gmail.com</em>
+      </p>
     </div>
   </div>
 </body>
