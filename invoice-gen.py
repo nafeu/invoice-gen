@@ -360,11 +360,11 @@ def process_item_desc(desc):
 
 def get_invoice_total(data):
     # TODO: Make more comprehensive
-    return sum([item['total'] for item in data['items']])
+    return '{:.2f}'.format(sum([float(item['total']) for item in data['items']]))
 
 
 def get_invoice_subtotal(data):
-    return sum([item['total'] for item in data['items']])
+    return '{:.2f}'.format(sum([float(item['total']) for item in data['items']]))
 
 
 def process_invoice_data(data):
@@ -373,7 +373,7 @@ def process_invoice_data(data):
         if "type" in item:
             item['total'] = item['rate']
         else:
-            item['total'] = item['hours'] * item['rate']
+            item['total'] = '{:.2f}'.format(item['hours'] * item['rate'])
     return data
 
 
