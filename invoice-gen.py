@@ -196,6 +196,17 @@ DEFAULT_TEMPLATE = """
         </tr>
       </table>
     </div>
+    [FOLLOWUP_INFO]
+    <div class="col-sm-10">
+      <p class="text-center text-small">
+        If you have any questions about this [INVOICE_TYPE], please call +1(416)894-5354 or email <em>nafeu.nasir@gmail.com</em>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+"""
+DEFAULT_FOLLOWUP_INVOICE = """
     <div class="col-sm-10 mt-2">
       <p class="text-center text-small">
         Please process all payments within <span class="bold">15 days</span> of receiving this invoice.
@@ -208,14 +219,6 @@ DEFAULT_TEMPLATE = """
     <div class="col-sm-4">
       <div class="sep"></div>
     </div>
-    <div class="col-sm-10">
-      <p class="text-center text-small">
-        If you have any questions about this invoice, please call +1(416)894-5354 or email <em>nafeu.nasir@gmail.com</em>
-      </p>
-    </div>
-  </div>
-</body>
-</html>
 """
 
 parser = argparse.ArgumentParser(description='Generate invoices.')
@@ -280,12 +283,14 @@ def build_pdf(config, data, export_path):
         .replace("[CUSTOMER_POSTAL_CODE]", customer['postal_code']) \
         .replace("[INVOICE_DATE]", data['invoice_date']) \
         .replace("[INVOICE_NUMBER]", data['invoice_number']) \
-        .replace("[INVOICE_TYPE]", data['invoice_type'], 2) \
+        .replace("[INVOICE_TYPE]", data['invoice_type']) \
         .replace("[INVOICE_ITEMS]", get_invoice_items(processed_data)) \
         .replace("[INVOICE_SUBTOTAL]", str(get_invoice_subtotal(processed_data))) \
-        .replace("[INVOICE_TOTAL]", str(get_invoice_total(processed_data)))
-    pdfkit.from_string(template, export_path)
-    subprocess.check_call(["open", "-a", "Preview.app", export_path])
+        .replace("[INVOICE_TOTAL]", str(get_invoice_total(processed_data))) \
+        .replace("[FOLLOWUP_INFO]", get_followup_info(data['invoice_type']))
+    final_export_path = export_path.replace("Invoice", data['invoice_type'].capitalize())
+    pdfkit.from_string(template, final_export_path)
+    subprocess.check_call(["open", "-a", "Preview.app", final_export_path])
     print("Complete.")
 
 
@@ -298,10 +303,9 @@ def init_new_invoice_data(config, customer):
     data['customer_id'] = customer['id']
     data['invoice_date'] = get_invoice_date(now)
     data['invoice_number'] = get_invoice_number(config['abrv'], now)
-    file_name = "%s_-_%s_%s_-_%s.yaml" % (config['name'].replace(" ", "_"),
-                                          customer['name'].replace(" ", "_"),
-                                          data['invoice_type'].capitalize(),
-                                          data['invoice_number'])
+    file_name = "%s_-_%s_Invoice_-_%s.yaml" % (config['name'].replace(" ", "_"),
+                                               customer['name'].replace(" ", "_"),
+                                               data['invoice_number'])
     create_yaml_file(file_name, data)
     open_file(file_name)
 
@@ -371,6 +375,13 @@ def process_invoice_data(data):
         else:
             item['total'] = item['hours'] * item['rate']
     return data
+
+
+def get_followup_info(invoice_type):
+    if invoice_type == "invoice":
+        return DEFAULT_FOLLOWUP_INVOICE
+    return ""
+
 
 if __name__ == '__main__':
     main()
