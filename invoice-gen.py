@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import pdfkit
-import json
+import yaml
 import subprocess
 import argparse
 import os.path
@@ -11,7 +11,7 @@ import sys
 
 now = datetime.datetime.now()
 
-CONFIG_PATH = "config.json"
+CONFIG_PATH = "config.yaml"
 INVOICE_NUMBER_UID_LENGTH = 5
 DEFAULT_CONFIG = {
     "name": "[BUSINESS_NAME]",
@@ -227,8 +227,8 @@ parser.add_argument("-l", "--list-customers",
                     help="list all customers",
                     action='store_true')
 parser.add_argument("-b", "--build",
-                    help="build a new pdf using the specified json file",
-                    metavar='JSON_FILE',
+                    help="build a new pdf using the specified yaml file",
+                    metavar='YAML_FILE',
                     nargs=1)
 args = parser.parse_args()
 
@@ -237,9 +237,9 @@ def main():
     config = {}
     if (os.path.isfile(CONFIG_PATH)):
         with open(CONFIG_PATH) as raw_config:
-            config = json.load(raw_config)
+            config = yaml.load(raw_config)
     else:
-        create_json_file(CONFIG_PATH, DEFAULT_CONFIG)
+        create_yaml_file(CONFIG_PATH, DEFAULT_CONFIG)
         print("Missing config, please fill it in and try again.")
         open_file(CONFIG_PATH)
         exit()
@@ -249,8 +249,8 @@ def main():
         data = {}
         if (os.path.isfile(args.build[0])):
             with open(args.build[0]) as raw_data:
-                data = json.load(raw_data)
-                build_pdf(config, data, args.build[0].replace(".json", ".pdf"))
+                data = yaml.load(raw_data)
+                build_pdf(config, data, args.build[0].replace(".yaml", ".pdf"))
         else:
             print("Invoice data file '%s' does not exist." % args.build[0])
     elif args.customer_id and len([(customer['id'] == args.customer_id) for customer in config['customers']]) > 0:
@@ -298,17 +298,17 @@ def init_new_invoice_data(config, customer):
     data['customer_id'] = customer['id']
     data['invoice_date'] = get_invoice_date(now)
     data['invoice_number'] = get_invoice_number(config['abrv'], now)
-    file_name = "%s_-_%s_%s_-_%s.json" % (config['name'].replace(" ", "_"),
+    file_name = "%s_-_%s_%s_-_%s.yaml" % (config['name'].replace(" ", "_"),
                                           customer['name'].replace(" ", "_"),
                                           data['invoice_type'].capitalize(),
                                           data['invoice_number'])
-    create_json_file(file_name, data)
+    create_yaml_file(file_name, data)
     open_file(file_name)
 
 
-def create_json_file(path, data):
+def create_yaml_file(path, data):
     with open(path, 'w') as file:
-        json.dump(data, file, indent=2)
+        yaml.dump(data, file, default_flow_style=False)
 
 
 def get_customer_by_id(customers, customer_id):
