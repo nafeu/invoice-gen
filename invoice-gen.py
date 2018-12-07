@@ -256,8 +256,13 @@ def main():
                 build_pdf(config, data, args.build[0].replace(".yaml", ".pdf"))
         else:
             print("Invoice data file '%s' does not exist." % args.build[0])
-    elif args.customer_id and len([(customer['id'] == args.customer_id) for customer in config['customers']]) > 0:
-        init_new_invoice_data(config, get_customer_by_id(config['customers'], args.customer_id))
+    elif args.customer_id:
+        if not args.customer_id.isdigit():
+            print("Invalid customer_id value '%s', please enter a number or use -l to list active customers." % args.customer_id)
+        elif len([customer for customer in config['customers'] if customer['id'] == int(args.customer_id)]) > 0:
+            init_new_invoice_data(config, get_customer_by_id(config['customers'], args.customer_id))
+        else:
+            print("Customer with id '%s' does not exist, please use -l to list active customers." % args.customer_id)
     else:
         parser.print_help(sys.stderr)
 

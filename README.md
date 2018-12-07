@@ -74,7 +74,17 @@ You can change `invoice_type` value to `quote` if you are generating a quote ins
 python invoice-gen.py -b [INVOICE_DATA_YAML_FILE_PATH]
 ```
 
-Use the exported pdf and profit. For additional help use `python invoice-gen.py -h`
+Use the exported pdf and profit. For additional help use `python invoice-gen.py -h`. I would also recommend adding the following alias to your zsh or bash rc:
+
+```
+alias invoice="python [PATH_TO_PROJECT_DIR]/invoice-gen.py"
+```
+
+If you are using **Python 2** as default:
+
+```
+alias invoice="python3 [PATH_TO_PROJECT_DIR]/invoice-gen.py"
+```
 
 ### Author
 
