@@ -7,6 +7,7 @@ import os.path
 import datetime
 import string
 import random
+import sys
 
 now = datetime.datetime.now()
 
@@ -41,7 +42,6 @@ DEFAULT_DATA = {
             "desc": "[DESCRIPTION]",
             "hours": 0,
             "rate": 35,
-            "total": 0
         }
     ]
 }
@@ -253,8 +253,10 @@ def main():
                 build_pdf(config, data, args.build[0].replace(".json", ".pdf"))
         else:
             print("Invoice data file '%s' does not exist." % args.build[0])
-    elif len([(customer['id'] == args.customer_id) for customer in config['customers']]) > 0:
+    elif args.customer_id and len([(customer['id'] == args.customer_id) for customer in config['customers']]) > 0:
         init_new_invoice_data(config, get_customer_by_id(config['customers'], args.customer_id))
+    else:
+        parser.print_help(sys.stderr)
 
 
 def list_customers(config):
@@ -324,7 +326,7 @@ def get_invoice_number(abbreviation, now):
 
 
 def get_invoice_date(now):
-    return now.strftime("%b %m, %Y")
+    return now.strftime("%b %d, %Y")
 
 
 def get_invoice_items(data):
