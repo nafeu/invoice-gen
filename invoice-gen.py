@@ -37,6 +37,7 @@ DEFAULT_DATA = {
     "invoice_type": "invoice",
     "invoice_date": "",
     "invoice_number": "",
+    "currency": "CAD",
     "items": [
         {
             "desc": "[DESCRIPTION]",
@@ -166,6 +167,7 @@ DEFAULT_TEMPLATE = """
       <div class="col-half">
         <div><span class="thin">DATE:</span> [INVOICE_DATE]</div>
         <div><span class="thin text-uppercase">[INVOICE_TYPE] #:</span> [INVOICE_NUMBER]</div>
+        <div><span class="thin text-uppercase">Tax #:</span> [BUSINESS_TAX_NUMBER]</div>
         <div><span class="thin">CUSTOMER ID:</span> [CUSTOMER_ID]</div>
       </div>
     </div>
@@ -173,9 +175,9 @@ DEFAULT_TEMPLATE = """
       <table class="table table-bordered">
         <tr>
           <th>Description</th>
-          <th>Hours</th>
-          <th>Pay Rate</th>
-          <th>Amount (CAD)</th>
+          <th>Units</th>
+          <th>Rate</th>
+          <th>Amount ([CURRENCY])</th>
         </tr>
         [INVOICE_ITEMS]
         <tr>
@@ -183,12 +185,8 @@ DEFAULT_TEMPLATE = """
           <td class="bb-none text-right"><span class="currency">$</span>[INVOICE_SUBTOTAL]</td>
         </tr>
         <tr>
-          <td colspan="3" class="bb-none bt-none bl-none text-right">Tax</td>
-          <td class="bb-none bt-none text-right"><span class="currency">$</span>-</td>
-        </tr>
-        <tr>
-          <td colspan="3" class="bb-none bt-none bl-none text-right">Expenses</td>
-          <td class="bb-none bt-none text-right"><span class="currency">$</span>-</td>
+          <td colspan="3" class="bb-none bt-none bl-none text-right">Sales Tax [INVOICE_SALES_TAX_DESC]</td>
+          <td class="bb-none bt-none text-right"><span class="currency">$</span>[INVOICE_SALES_TAX]</td>
         </tr>
         <tr>
           <td colspan="3" class="bb-none bt-none bl-none text-right">Total</td>
@@ -199,7 +197,7 @@ DEFAULT_TEMPLATE = """
     [FOLLOWUP_INFO]
     <div class="col-sm-10">
       <p class="text-center text-small">
-        If you have any questions about this [INVOICE_TYPE], please call +1(416)894-5354 or email <em>nafeu.nasir@gmail.com</em>
+        If you have any questions about this [INVOICE_TYPE], please call [BUSINESS_PHONE] or email <em>[BUSINESS_EMAIL]</em>
       </p>
     </div>
   </div>
@@ -212,14 +210,15 @@ DEFAULT_FOLLOWUP_INVOICE = """
         Please process all payments within <span class="bold">15 days</span> of receiving this invoice.
       </p>
       <ul>
-        <li class="thin">Make all cheques payable to <span class="bold">Nafeu Nasir</span></li>
-        <li class="thin">eTransfers and Paypal payments are also accepted, please send to  <span class="bold">nafeu.nasir@gmail.com</span></li>
+        <li class="thin">Make all cheques payable to <span class="bold">[BUSINESS_OWNER]</span></li>
       </ul>
     </div>
     <div class="col-sm-4">
       <div class="sep"></div>
     </div>
 """
+# TODO: Make etransfers optional
+# <li class="thin">eTransfers and Paypal payments are also accepted, please send to  <span class="bold">[BUSINESS_EMAIL]</span></li>
 
 parser = argparse.ArgumentParser(description='Generate invoices.')
 parser.add_argument('customer_id',
@@ -281,6 +280,9 @@ def build_pdf(config, data, export_path):
         .replace("[BUSINESS_CITY_PROVINCE_COUNTRY]", config['city_province_country']) \
         .replace("[BUSINESS_POSTAL_CODE]", config['postal_code']) \
         .replace("[BUSINESS_PHONE]", config['phone']) \
+        .replace("[BUSINESS_OWNER]", config['owner']) \
+        .replace("[BUSINESS_EMAIL]", config['email']) \
+        .replace("[BUSINESS_TAX_NUMBER]", config['tax_number']) \
         .replace("[CUSTOMER_NAME]", customer['name']) \
         .replace("[CUSTOMER_ID]", str(customer['id'])) \
         .replace("[CUSTOMER_ADDRESS]", customer['address']) \
@@ -291,8 +293,11 @@ def build_pdf(config, data, export_path):
         .replace("[INVOICE_TYPE]", data['invoice_type']) \
         .replace("[INVOICE_ITEMS]", get_invoice_items(processed_data)) \
         .replace("[INVOICE_SUBTOTAL]", str(get_invoice_subtotal(processed_data))) \
-        .replace("[INVOICE_TOTAL]", str(get_invoice_total(processed_data))) \
-        .replace("[FOLLOWUP_INFO]", get_followup_info(data['invoice_type']))
+        .replace("[INVOICE_SALES_TAX_DESC]", str(get_sales_tax_desc(data, config))) \
+        .replace("[INVOICE_SALES_TAX]", str(get_invoice_sales_tax(processed_data, config))) \
+        .replace("[INVOICE_TOTAL]", str(get_invoice_total(processed_data, config))) \
+        .replace("[FOLLOWUP_INFO]", get_followup_info(data['invoice_type'], config)) \
+        .replace("[CURRENCY]", data['currency'])
     final_export_path = export_path.replace("Invoice", data['invoice_type'].capitalize())
     pdfkit.from_string(template, final_export_path)
     subprocess.check_call(["open", "-a", "Preview.app", final_export_path])
@@ -300,7 +305,7 @@ def build_pdf(config, data, export_path):
 
 
 def open_file(path):
-    subprocess.check_call(["open", path])
+    subprocess.check_call(["open", "-a", "Sublime Text.app", path])
 
 
 def init_new_invoice_data(config, customer):
@@ -308,6 +313,8 @@ def init_new_invoice_data(config, customer):
     data['customer_id'] = customer['id']
     data['invoice_date'] = get_invoice_date(now)
     data['invoice_number'] = get_invoice_number(config['abrv'], now)
+    data['currency'] = customer['currency']
+    data['items'] = customer['items']
     file_name = "%s_-_%s_Invoice_-_%s.yaml" % (config['name'].replace(" ", "_"),
                                                customer['name'].replace(" ", "_"),
                                                data['invoice_number'])
@@ -341,13 +348,16 @@ def get_invoice_date(now):
 def get_invoice_items(data):
     out = ""
     for item in data['items']:
-        out += "<tr><td class='item-cell'>%s</td>" % process_item_desc(item['desc'])
-        out += "<td class='text-center item-cell'>%s</td>" % item['hours']
-        rate_label = "/hr"
-        if "type" in item:
-            rate_label = " (%s)" % item['type']
-        out += "<td class='text-right item-cell'><span class='currency'>$</span>%s%s</td>" % (item['rate'], rate_label)
-        out += "<td class='text-right item-cell'><span class='currency'>$</span>%s</td></tr>" % item['total']
+        out += "<tr>"
+        out += "<td class='item-cell'>%s</td>" % process_item_desc(item['desc'])
+        if 'units' in item:
+            out += "<td class='text-center item-cell'>%s %s(s)</td>" % (item['units'], item['by'])
+            out += "<td class='text-right item-cell'><span class='currency'>$</span>%s / %s</td>" % (item['rate'], item['by'])
+        else:
+            out += "<td class='text-center item-cell'>-</td>"
+            out += "<td class='text-right item-cell'><span class='currency'>$</span>%s</td>" % (item['rate'])
+        out += "<td class='text-right item-cell'><span class='currency'>$</span>%s</td>" % item['total']
+        out += "</tr>"
     return out
 
 
@@ -363,9 +373,28 @@ def process_item_desc(desc):
     return desc
 
 
-def get_invoice_total(data):
-    # TODO: Make more comprehensive
-    return '{:.2f}'.format(sum([float(item['total']) for item in data['items']]))
+def get_invoice_total(data, config):
+    if 'taxable' in data and data['taxable']:
+        return '{:.2f}'.format(
+            sum([float(item['total']) for item in data['items']])
+            + (sum([float(item['total']) for item in data['items']]) * config['tax_rate'])
+        )
+    else:
+        return '{:.2f}'.format(sum([float(item['total']) for item in data['items']]))
+
+
+def get_invoice_sales_tax(data, config):
+    if 'taxable' in data and data['taxable']:
+        return '{:.2f}'.format(sum([float(item['total']) for item in data['items']]) * config['tax_rate'])
+    else:
+        return '-'
+
+
+def get_sales_tax_desc(data, config):
+    if 'taxable' in data and data['taxable']:
+        return '(' + config['tax_desc'] + ')'
+    else:
+        return ''
 
 
 def get_invoice_subtotal(data):
@@ -374,17 +403,17 @@ def get_invoice_subtotal(data):
 
 def process_invoice_data(data):
     for item in data['items']:
-        # TODO: Add more rate type options
-        if "type" in item:
-            item['total'] = item['rate']
+        if 'units' in item:
+            item['total'] = '{:.2f}'.format(item['units'] * item['rate'])
         else:
-            item['total'] = '{:.2f}'.format(item['hours'] * item['rate'])
+            item['total'] = '{:.2f}'.format(item['rate'])
     return data
 
 
-def get_followup_info(invoice_type):
+def get_followup_info(invoice_type, config):
     if invoice_type == "invoice":
-        return DEFAULT_FOLLOWUP_INVOICE
+        return DEFAULT_FOLLOWUP_INVOICE.replace("[BUSINESS_OWNER]", config['owner']) \
+            .replace("[BUSINESS_EMAIL]", config['email'])
     return ""
 
 

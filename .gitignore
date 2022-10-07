@@ -5,3 +5,6 @@
 *.html
 data/
 sandbox.py
+contractual/
+expenses/
+devnotes.txt
