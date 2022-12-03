@@ -239,7 +239,7 @@ def main():
     config = {}
     if (os.path.isfile(CONFIG_PATH)):
         with open(CONFIG_PATH) as raw_config:
-            config = yaml.load(raw_config)
+            config = yaml.safe_load(raw_config)
     else:
         create_yaml_file(CONFIG_PATH, DEFAULT_CONFIG)
         print("Missing config, please fill it in and try again.")
@@ -251,7 +251,7 @@ def main():
         data = {}
         if (os.path.isfile(args.build[0])):
             with open(args.build[0]) as raw_data:
-                data = yaml.load(raw_data)
+                data = yaml.safe_load(raw_data)
                 build_pdf(config, data, args.build[0].replace(".yaml", ".pdf"))
         else:
             print("Invoice data file '%s' does not exist." % args.build[0])
